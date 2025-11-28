@@ -2,6 +2,14 @@ import clsx from "clsx";
 import { AlignLeft, X } from "lucide-react";
 import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
+import { useSwipeable } from "react-swipeable";
+
+const mainTabs = [
+  { key: "home", path: "/" },
+  { key: "library", path: "/my-library" },
+  { key: "explore", path: "/explore" },
+  { key: "account", path: "/account" },
+];
 
 const navItems = [
   { key: "dashboard", label: "Dashboard", path: "" },
@@ -12,17 +20,43 @@ const navItems = [
 ];
 
 export default function MyLibraryLayout() {
-  const [isMenuOpen, setMenuOpen] = useState<boolean>(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
   const navigate = useNavigate();
 
   const toggle = () => setMenuOpen((m) => !m);
 
+  // 🟦 Get current main tab index based on URL
+  const currentPath = window.location.pathname;
+  const currentIndex = mainTabs.findIndex((t) =>
+    currentPath.startsWith(t.path)
+  );
+
+  // 🟩 Swipe Handlers
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (currentIndex < mainTabs.length - 1) {
+        navigate(mainTabs[currentIndex + 1].path);
+      }
+    },
+    onSwipedRight: () => {
+      if (currentIndex > 0) {
+        navigate(mainTabs[currentIndex - 1].path);
+      }
+    },
+    preventScrollOnSwipe: true,
+    trackTouch: true,
+    trackMouse: false,
+  });
+
   return (
-    <div className="relative flex w-full h-full overflow-hidden bg-white">
+    <div
+      {...swipeHandlers}
+      className="relative flex w-full h-full overflow-hidden bg-white"
+    >
       <aside
         className={clsx(
-          "absolute top-0 left-0 h-full w-[150px] bg-white flex flex-col justify-between transition-transform duration-500 ease-in-out z-100",
+          "absolute top-0 left-0 h-full w-[150px] bg-white flex flex-col justify-between transition-transform duration-500 ease-in-out z-[100]",
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
