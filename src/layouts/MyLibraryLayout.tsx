@@ -26,13 +26,12 @@ export default function MyLibraryLayout() {
 
   const toggle = () => setMenuOpen((m) => !m);
 
-  // 🟦 Get current main tab index based on URL
+  // 🟦 FIXED: detect correct top-level route
   const currentPath = window.location.pathname;
-  const currentIndex = mainTabs.findIndex((t) =>
-    currentPath.startsWith(t.path)
-  );
+  const currentTop = "/" + currentPath.split("/")[1];
+  const currentIndex = mainTabs.findIndex((t) => t.path === currentTop);
 
-  // 🟩 Swipe Handlers
+  // 🟩 Swipe Handlers (fixed sensitivity)
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => {
       if (currentIndex < mainTabs.length - 1) {
@@ -44,16 +43,15 @@ export default function MyLibraryLayout() {
         navigate(mainTabs[currentIndex - 1].path);
       }
     },
+    delta: 20,
     preventScrollOnSwipe: true,
     trackTouch: true,
     trackMouse: false,
+    touchEventOptions: { passive: false },
   });
 
   return (
-    <div
-      {...swipeHandlers}
-      className="relative flex w-full h-full overflow-hidden bg-white"
-    >
+    <div className="relative flex w-full h-full overflow-hidden bg-white">
       <aside
         className={clsx(
           "absolute top-0 left-0 h-full w-[150px] bg-white flex flex-col justify-between transition-transform duration-500 ease-in-out z-[100]",
@@ -88,7 +86,9 @@ export default function MyLibraryLayout() {
         </nav>
       </aside>
 
+      {/* 🟧 APPLY SWIPE HERE (scrollable content) */}
       <div
+        {...swipeHandlers}
         className={clsx(
           "flex-1 flex flex-col transition-all duration-500 ease-in-out",
           isMenuOpen ? "md:ml-[150px]" : "md:ml-0"
