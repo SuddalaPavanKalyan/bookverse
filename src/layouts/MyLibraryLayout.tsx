@@ -23,27 +23,37 @@ const navItems = [
 export default function MyLibraryLayout() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const [ready, setReady] = useState(false);
   const navigate = useNavigate();
 
-  const seg = window.location.pathname.split("/")[2] ?? "";
-  const startIndex = childTabs.findIndex((t) => t.path.endsWith(seg));
+  const pathname = window.location.pathname.replace(/\/+$/, "");
+  const paths = childTabs.map((c) => c.path);
+  const startIndex = paths.findIndex(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
 
-  const swipe = useCustomSwipeable(childTabs);
-
-  const [ready, setReady] = useState(false);
+  const swipe = useCustomSwipeable(paths);
 
   useEffect(() => {
     if (startIndex >= 0) {
       swipe.setIndex(startIndex);
-      setReady(true);
+      setActiveTab(navItems[startIndex].label);
+    } else {
+      swipe.setIndex(0);
+      setActiveTab(navItems[0].label);
     }
-  }, [startIndex]);
+    setReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    if (ready) {
-      navigate(swipe.item.path);
-      setActiveTab(navItems[swipe.index].label);
+    if (!ready) return;
+    const target = swipe.item;
+    if (target && typeof target === "string") {
+      navigate(target, { replace: true });
+      setActiveTab(navItems[swipe.index]?.label ?? "Dashboard");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swipe.index, ready]);
 
   const toggle = () => setMenuOpen((m) => !m);
@@ -85,11 +95,15 @@ export default function MyLibraryLayout() {
       </aside>
 
       <div
-        {...(ready ? swipe.handlers : {})}
-        className="flex-1 flex flex-col transition-all duration-500 ease-in-out
-  ${isMenuOpen ? 'md:ml-[150px]' : 'md:ml-0'}"
+        className={clsx(
+          "flex-1 flex flex-col transition-all duration-500 ease-in-out",
+          isMenuOpen ? "md:ml-[150px]" : "md:ml-0"
+        )}
       >
-        <main className="flex-1 overflow-y-auto bg-white rounded-l-2xl">
+        <main
+          {...(ready && !isMenuOpen ? swipe.handlers : {})}
+          className="flex-1 overflow-y-auto bg-white rounded-l-2xl touch-action-pan-y"
+        >
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white/90 backdrop-blur-md">
             {!isMenuOpen && (
               <button
