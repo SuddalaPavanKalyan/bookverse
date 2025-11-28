@@ -7,10 +7,10 @@ import {
   User,
   X,
 } from "lucide-react";
-import React, { useState } from "react";
-
+import React, { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Logo from "../hooks/Logo";
+import { useCustomSwipeable } from "../hooks/useCustomSwipeable";
 
 interface NavItemProps {
   link: string;
@@ -32,9 +32,7 @@ const NavItemIconName: React.FC<NavItemProps> = ({ link, Icon, name }) => {
     >
       <span
         className={`rounded-full px-4 py-[2px] md:py-2 transition-all duration-200 ease-in-out ${
-          isActive
-            ? "bg-white" // a soft lavender tone to match #4B0082
-            : "hover:bg-[#E6E6FA]"
+          isActive ? "bg-white" : "hover:bg-[#E6E6FA]"
         }`}
       >
         <Icon
@@ -59,31 +57,30 @@ const NavItemIconName: React.FC<NavItemProps> = ({ link, Icon, name }) => {
 
 const MainLayout: React.FC = () => {
   const navItems = [
-    {
-      label: "Home",
-      path: "/",
-      icon: Home,
-    },
-    {
-      label: "My Library",
-      path: "/my-library",
-      icon: LibraryBig, // Borrowed, Reserved, Returned
-    },
-    {
-      label: "Explore",
-      path: "/explore",
-      icon: BookOpen, // Search/Browse Books
-    },
-
-    {
-      label: "Account",
-      path: "/settings/",
-      icon: User,
-    },
+    { label: "Home", path: "/", icon: Home },
+    { label: "My Library", path: "/my-library", icon: LibraryBig },
+    { label: "Explore", path: "/explore", icon: BookOpen },
+    { label: "Account", path: "/settings", icon: User },
   ];
 
-  const [search, setSearch] = useState("");
+  const paths = navItems.map((n) => n.path);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const seg = "/" + location.pathname.split("/")[1];
+  const startIndex = paths.findIndex((p) => p === seg);
+
+  const swipe = useCustomSwipeable(paths);
+
+  useEffect(() => {
+    if (startIndex >= 0) swipe.setIndex(startIndex);
+  }, []);
+
+  useEffect(() => {
+    navigate(swipe.item);
+  }, [swipe.index]);
+
+  const [search, setSearch] = useState("");
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
@@ -105,7 +102,7 @@ const MainLayout: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 md:ml-24">
+      <div {...swipe.handlers} className="flex-1 md:ml-24">
         <div className="px-4 sm:px-6 md:px-8 py-4 flex flex-row items-center justify-between gap-3">
           <Logo />
           <div className="flex items-center flex-1 w-full max-w-full relative backdrop-blur-sm border border-2 border-gray-200 py-1 rounded-full transition-all duration-300 md:max-w-lg md:px-2 px-1 gap-2">
