@@ -1,14 +1,15 @@
 import clsx from "clsx";
 import { AlignLeft, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { useSwipeable } from "react-swipeable";
+import { useCustomSwipeable } from "../hooks/useCustomSwipeable";
 
-const mainTabs = [
-  { key: "home", path: "/" },
-  { key: "library", path: "/my-library" },
-  { key: "explore", path: "/explore" },
-  { key: "account", path: "/account" },
+const childTabs = [
+  { key: "dashboard", path: "/my-library" },
+  { key: "borrowed", path: "/my-library/borrowed" },
+  { key: "requested", path: "/my-library/requested" },
+  { key: "reserved", path: "/my-library/reserved" },
+  { key: "cart", path: "/my-library/cart" },
 ];
 
 const navItems = [
@@ -24,31 +25,25 @@ export default function MyLibraryLayout() {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const navigate = useNavigate();
 
+  const seg = window.location.pathname.split("/")[2] ?? "";
+  const startIndex = childTabs.findIndex((t) => t.path.endsWith(seg));
+
+  const swipe = useCustomSwipeable(childTabs);
+
+  useEffect(() => {
+    if (startIndex >= 0) {
+      swipe.setIndex(startIndex);
+    }
+
+    console.log("Segment", seg);
+  }, []);
+
+  useEffect(() => {
+    navigate(swipe.item.path);
+    setActiveTab(navItems[swipe.index].label);
+  }, [swipe.index]);
+
   const toggle = () => setMenuOpen((m) => !m);
-
-  // 🟦 FIXED: detect correct top-level route
-  const currentPath = window.location.pathname;
-  const currentTop = "/" + currentPath.split("/")[1];
-  const currentIndex = mainTabs.findIndex((t) => t.path === currentTop);
-
-  // 🟩 Swipe Handlers (fixed sensitivity)
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (currentIndex < mainTabs.length - 1) {
-        navigate(mainTabs[currentIndex + 1].path);
-      }
-    },
-    onSwipedRight: () => {
-      if (currentIndex > 0) {
-        navigate(mainTabs[currentIndex - 1].path);
-      }
-    },
-    delta: 20,
-    preventScrollOnSwipe: true,
-    trackTouch: true,
-    trackMouse: false,
-    touchEventOptions: { passive: false },
-  });
 
   return (
     <div className="relative flex w-full h-full overflow-hidden bg-white">
@@ -66,7 +61,7 @@ export default function MyLibraryLayout() {
         </button>
 
         <nav className="flex-1 overflow-y-auto mt-16 px-4 py-2 space-y-3">
-          {navItems.map(({ key, label, path }) => (
+          {navItems.map(({ key, label, path }, _) => (
             <button
               key={key}
               onClick={() => {
@@ -86,9 +81,8 @@ export default function MyLibraryLayout() {
         </nav>
       </aside>
 
-      {/* 🟧 APPLY SWIPE HERE (scrollable content) */}
       <div
-        {...swipeHandlers}
+        {...swipe.handlers}
         className={clsx(
           "flex-1 flex flex-col transition-all duration-500 ease-in-out",
           isMenuOpen ? "md:ml-[150px]" : "md:ml-0"
