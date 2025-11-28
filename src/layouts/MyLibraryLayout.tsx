@@ -30,18 +30,21 @@ export default function MyLibraryLayout() {
 
   const swipe = useCustomSwipeable(childTabs);
 
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
     if (startIndex >= 0) {
       swipe.setIndex(startIndex);
+      setReady(true);
     }
-
-    console.log("Segment", seg);
-  }, []);
+  }, [startIndex]);
 
   useEffect(() => {
-    navigate(swipe.item.path);
-    setActiveTab(navItems[swipe.index].label);
-  }, [swipe.index]);
+    if (ready) {
+      navigate(swipe.item.path);
+      setActiveTab(navItems[swipe.index].label);
+    }
+  }, [swipe.index, ready]);
 
   const toggle = () => setMenuOpen((m) => !m);
 
@@ -82,11 +85,9 @@ export default function MyLibraryLayout() {
       </aside>
 
       <div
-        {...swipe.handlers}
-        className={clsx(
-          "flex-1 flex flex-col transition-all duration-500 ease-in-out",
-          isMenuOpen ? "md:ml-[150px]" : "md:ml-0"
-        )}
+        {...(ready ? swipe.handlers : {})}
+        className="flex-1 flex flex-col transition-all duration-500 ease-in-out
+  ${isMenuOpen ? 'md:ml-[150px]' : 'md:ml-0'}"
       >
         <main className="flex-1 overflow-y-auto bg-white rounded-l-2xl">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white/90 backdrop-blur-md">
